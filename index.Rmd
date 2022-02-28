@@ -1,5 +1,6 @@
 ---
-title: "Computational Musicology portfolio by Aron de Ruijter"
+title: "Computational Musicology portfolio"
+author: "Aron de Ruijter"
 output: 
   flexdashboard::flex_dashboard:
     storyboard: true
