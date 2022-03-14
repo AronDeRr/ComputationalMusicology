@@ -4,8 +4,10 @@ author: "Aron de Ruijter"
 output: 
   flexdashboard::flex_dashboard:
     storyboard: true
+    theme: journal
     orientation: columns
     vertical_layout: fill
+    self_contained: false
 ---
 
 ```{r setup, include=FALSE}
@@ -18,7 +20,57 @@ library(ggplot2)
 library(knitr)
 library(compmus)
 spotifyr::get_spotify_access_token()
+
+fleetwoodMac <- get_playlist_audio_features("", "1NdovVKsJylONwiE6WXwB5")
+
+fleetwoodMac$track.album.name[fleetwoodMac$track.album.name == "Fleetwood Mac"] <- "Fleetwood Mac 1"
+fleetwoodMac$track.album.name[fleetwoodMac$track.album.name == "Then Play On (2013 Remaster; Expanded Edition)"] <- "Then Play On"
+fleetwoodMac$track.album.name[fleetwoodMac$track.album.name == "Fleetwood Mac (2017 Remaster)"] <- "Fleetwood Mac 2"
+fleetwoodMac$track.album.name[fleetwoodMac$track.album.name == "Tusk (2015 Remaster)"] <- "Tusk"
+fleetwoodMac$track.album.name[fleetwoodMac$track.album.name == "Mirage (2016 Remaster)"] <- "Mirage"
+fleetwoodMac$track.album.name[fleetwoodMac$track.album.name == "Tango in the Night (2017 Remaster)"] <- "Tango in the Night"
+
+fleetwoodMac <- fleetwoodMac %>%
+  mutate(era = case_when(track.album.name == "Fleetwood Mac 1" ~ "Peter Green",
+                         track.album.name == "Mr. Wonderful" ~ "Peter Green",
+                         track.album.name == "Then Play On" ~ "Peter Green",
+                         track.album.name == "Kiln House" ~ "Peter Green",
+                         track.album.name == "Future Games" ~ "Bob Welch",
+                         track.album.name == "Bare Trees" ~ "Bob Welch",
+                         track.album.name == "Penguin" ~ "Bob Welch",
+                         track.album.name == "Mystery to Me" ~ "Bob Welch",
+                         track.album.name == "Heroes Are Hard to Find" ~ "Bob Welch",
+                         track.album.name == "Fleetwood Mac 2" ~ "Buckingham Nicks",
+                         track.album.name == "Rumours" ~ "Buckingham Nicks",
+                         track.album.name == "Tusk" ~ "Buckingham Nicks",
+                         track.album.name == "Mirage" ~ "Buckingham Nicks",
+                         track.album.name == "Tango in the Night" ~ "Buckingham Nicks",
+                         track.album.name == "Say You Will" ~ "Buckingham Nicks",
+                         track.album.name == "Behind the Mask" ~ "Billy Burnette",
+                         track.album.name == "Time" ~ "Billy Burnette"))
+
+fleetwoodMac$era <- factor(fleetwoodMac$era, levels = c("Peter Green", "Bob Welch", "Buckingham Nicks", "Billy Burnette"))
 ```
+
+### Keys used in the different line-ups
+
+```{r}
+ggplot(fleetwoodMac, aes(key)) +
+  geom_bar(position = "dodge") + 
+  facet_grid(~ era) +
+  labs(title = "Keys used in different Fleetwood Mac groups")
+```
+
+***
+* I did not submit my portfolio last week, so if you could also give feedback on the section "The Chain" (self-similarity matrix), that would be appreciated.
+
+* In this section I will discuss the keys that are used in each line-up.
+
+* Peter Green's Fleetwood Mac has two keys, key 2 and key 9, that are used a lot more than the others. Key 2 is also used quite a bit in the Bob Welch era, but is not the most used key. During the Buckingham Nicks and the Billy Burnette line-up key 2 is still used, but it is one of the lesser used keys. Key 9, however, did get used the most in these line-ups, but in the Bob Welch line-up this key is was only moderately popular.
+
+* The most used key in the Bob Welch line-up is key 5, which was the 3rd most used key in the previous line-up. In the final two line-ups this key was used, but it does not stand out.
+
+* During the Buckingham Nicks era key 0 got used a lot, while in the other line-ups this key was barely used.
 
 ### The Chain
 
@@ -74,7 +126,13 @@ bind_rows(
 
 * I have chosen the song "The Chain" for the self-similarity matrix, because there is a two distinct sections in the song. The first section consists of the main verse and the chorus and the second sections is the outro of the song. 
 
-* The outro starts around the three minute mark, when all instruments go silent, except for the drums. Then an iconic bass section starts and after 20 seconds a guitar solo accompanies the drums and the bass. When the vocals start in the final part of the outro, you can see a clear shift in timbre in the final section.
+* The Chain is also the only song in the Buckingham Nicks era which is written by all band members.
+
+* In the first section of the song there is a checkerboard pattern visible in the chromagram.
+
+* The change between the first section and the second section starts around the three minute mark, when all instruments go silent, except for the drums. This can be seen in both matrices, because there is a straight horizontal and vertical line.
+
+*  Then the outro starts with an iconic bass section and after 20 seconds a guitar solo accompanies the drums and the bass. When the vocals start in the final part of the outro, you can see a clear shift in timbre in the final section.
 
 ### Introduction to Fleetwood Mac and the purpose of the corpus
 
@@ -86,7 +144,6 @@ I think this corpus will be interesting, because there have been a lot of change
 <br>
   
 \+ Peter Green (guitar/ lead and backing vocals), Jeremy Spencer (slide guitar/ piano /lead and backing vocals), 
-
 - Fleetwood Mac (1968) (Also known as Peter Green's Fleetwood Mac)
 
 - Mr. Wonderful (1968)
