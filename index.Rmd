@@ -20,6 +20,62 @@ library(compmus)
 spotifyr::get_spotify_access_token()
 ```
 
+### The Chain
+
+```{r}
+
+thechain <-
+  get_tidy_audio_analysis("5e9TFTbltYBg2xThimr0rU") %>% # Change URI.
+  compmus_align(bars, segments) %>%                     # Change `bars`
+  select(bars) %>%                                      #   in all three
+  unnest(bars) %>%                                      #   of these lines.
+  mutate(
+    pitches =
+      map(segments,
+          compmus_summarise, pitches,
+          method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  ) %>%
+  mutate(
+    timbre =
+      map(segments,
+          compmus_summarise, timbre,
+          method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  )
+
+bind_rows(
+  thechain %>% 
+    compmus_self_similarity(pitches, "aitchison") %>% 
+    mutate(d = d / max(d), type = "Chroma"),
+  thechain %>% 
+    compmus_self_similarity(timbre, "euclidean") %>% 
+    mutate(d = d / max(d), type = "Timbre")
+) %>%
+  mutate() %>% 
+  ggplot(
+    aes(
+      x = xstart + xduration / 2,
+      width = xduration,
+      y = ystart + yduration / 2,
+      height = yduration,
+      fill = d
+    )
+  ) +
+  geom_tile() +
+  coord_fixed() +
+  facet_wrap(~type) +
+  scale_fill_viridis_c(option = "E", guide = "none") +
+  theme_classic() + 
+  labs(x = "", y = "", title = "Self-similarity Matrix of The Chain")
+```
+
+***
+
+* I have chosen the song "The Chain" for the self-similarity matrix, because there is a two distinct sections in the song. The first section consists of the main verse and the chorus and the second sections is the outro of the song. 
+
+* The outro starts around the three minute mark, when all instruments go silent, except for the drums. Then an iconic bass section starts and after 20 seconds a guitar solo accompanies the drums and the bass. When the vocals start in the final part of the outro, you can see a clear shift in timbre in the final section.
+
 ### Introduction to Fleetwood Mac and the purpose of the corpus
 
 My corpus consists of the 17 studio albums released by the band Fleetwood Mac. Also known in the earlier years as Peter Green's Fleetwood Mac. I choose this corpus, because Fleetwood Mac is my favorite musical artist and the band has topped my Spotify wrapped ever since I got a Spotify subscription a few years ago. 
@@ -30,42 +86,59 @@ I think this corpus will be interesting, because there have been a lot of change
 <br>
   
 \+ Peter Green (guitar/ lead and backing vocals), Jeremy Spencer (slide guitar/ piano /lead and backing vocals), 
+
 - Fleetwood Mac (1968) (Also known as Peter Green's Fleetwood Mac)
+
 - Mr. Wonderful (1968)
 
 \+ Danny Kirwan (guitar/ lead and backing vocals)
+
 - Then Play On (1969)
 
 \- Peter Green
+
 - Kiln House (1970)
 
 \- Jeremy Spencer \+ Bob Welch (guitar/ lead and backing vocals), Christine McVie (keyboards/ lead and backing vocals)
+
 - Future Games (1971)
+
 - Bare Trees (1972)
 
 \- Danny Kirwan \+ Bob Weston (lead guitar/ backing vocals), Dave Walker (lead and backing vocals/ harmonica)
+
 - Penguin (1973)
 
 \- Dave Walker
+
 - Mystery to Me (1973)
 
 \- Bob Weston
+
 - Heroes Are Hard to Find (1974)
 
 \- Bob Welch \+ Lindsey Buckingham (guitar/ lead and backing vocals), Stevie Nicks (lead and backing vocals/ tambourine)
+
 - Fleetwood Mac (1975) (Also known as "The White Album")
+
 - Rumours (1977)
+
 - Tusk (1979)
+
 - Mirage (1982)
+
 - Tango in the Night (1987)
 
 \- Lindsey Buckingham \+ Billy Burnette (rhythm guitar/ backing and lead vocals), Rick Vito (lead guitar/ backing and lead vocals)
+
 - Behind the Mask (1990)
 
 \- Stevie Nicks, Rick Vito \+ Bekka Bramlett (lead and backing vocals), Dave Mason (lead guitar/ backing and lead vocals)
+
 - Time (1995)
 
 \- Billy Burnette, Bekka Bramlett, Dave Mason, Christine McVie \+ Lindsey Buckingham, Stevie Nicks
+
 - Say You Will (2003)
 
 \- Lindsey Buckingham \+ Christine McVie, Neil Finn (rhythm guitar/ lead and backing vocals), Mike Campbell (lead guitar)
@@ -73,7 +146,9 @@ I think this corpus will be interesting, because there have been a lot of change
 <br>
   
 The band started out as a blues band, but since the addition of Christine McVie after the album "Kiln House" the style of the band shifted to rock. I expect there to be quite a few differences between these earlier albums and the others. 
-Their second self-titled album was the breakthrough for the band and got them global success. This was the first album released since the addition of the duo Lindsey Buckingham and Stevey Nicks. The members of the band that released this album is the most well known line-up and brought the band the most succes in the 5 albums they released as a core. It will be interesting to look at what this line-up did different, that brought them this success.
+Their second self-titled album was the breakthrough for the band and got them global success. This was the first album released since the addition of the duo Lindsey Buckingham and Stevie Nicks. The members of the band that released this album is the most well known line-up and brought the band the most success in the 5 albums they released as a core. It will be interesting to look at what this line-up did different, that brought them this success.
+
+To make it easier for comparing these different line-ups I will group them as follows: Peter Green's Fleetwood Mac (Fleetwood Mac I - Kiln House), Bob Welch's Fleetwood Mac (Future Gamse - Heroes Are Hard to Find), Buckingham Nicks Fleetwood Mac (Fleetwood Mac II - Tango in the Night, and Say You Will) and finally Billy Burnette's Fleetwood Mac (Behind the Mask and Time).
 
 ### Album valence and energy comparison.
 
@@ -107,7 +182,7 @@ Their second self-titled album was the breakthrough for the band and got them gl
 
 <!-- Column {data-width=350} -->
 <!-- ----------------------------------------------------------------------- -->
-### Chart B
+### Chromagram of 3 different versions of Landslide
 
 ```{r}
 
@@ -157,7 +232,7 @@ landslide_live_1975 %>%
     )
   ) +
   geom_tile() +
-  labs(x = "Time (s)", y = NULL, fill = "Magnitude", title = "Landslide (live version 1975") +
+  labs(x = "Time (s)", y = NULL, fill = "Magnitude", title = "Landslide (live version 1975)") +
   theme_minimal() +
   scale_fill_viridis_c()
 
@@ -173,7 +248,7 @@ landslide_live_1997 %>%
     )
   ) +
   geom_tile() +
-  labs(x = "Time (s)", y = NULL, fill = "Magnitude", title = "Landslide (live version 1997") +
+  labs(x = "Time (s)", y = NULL, fill = "Magnitude", title = "Landslide (live version 1997)") +
   theme_minimal() +
   scale_fill_viridis_c()
 
@@ -181,17 +256,10 @@ landslide_live_1997 %>%
 
 ***
 
-* Studio version with electric guitar solo
+* Studio version acoustic guitar with electric guitar solo
 
 * Live 1975 version electric guitar solo replaced by piano solo
 
-* Live 1997 version adjusted guitar solo that is played by accoustic guitar. making the entire song played only by an accoustic guitar
+* Live 1997 version adjusted guitar solo that is played by acoustic guitar. making the entire song played only by an acoustic guitar
 
 * not sure why the second one is smaller
-
-<!-- ### Chart C -->
-
-<!-- ```{r} -->
-
-<!-- ``` -->
-
