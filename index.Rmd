@@ -248,7 +248,7 @@ To make it easier for comparing these different line-ups I will group them as fo
 <!-- ----------------------------------------------------------------------- -->
 ### Chromagram of 3 different versions of Landslide
 
-```{r}
+```{r out.width="80%", fig.height=2, fig.align='center', echo = F}
 
 landslide_live_1997 <-
   get_tidy_audio_analysis("06h9kk12VjJ2bqcBc6IScR") %>%
