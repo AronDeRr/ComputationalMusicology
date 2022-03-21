@@ -41,17 +41,26 @@ fleetwoodMac$era <- factor(fleetwoodMac$era, levels = c("Peter Green", "Bob Welc
 fleetwoodMac$track.album.name <- factor(fleetwoodMac$track.album.name, levels = c("Fleetwood Mac 1", "Mr. Wonderful", "Then Play On", "Kiln House", "Future Games", "Bare Trees", "Penguin", "Mystery to Me", "Heroes Are Hard to Find", "Fleetwood Mac 2", "Rumours", "Tusk", "Mirage", "Tango in the Night", "Behind the Mask", "Time", "Say You Will"))
  
 tempoPlot <- ggplot(fleetwoodMac) +
-    facet_grid(~era, scales = "free", space = "free") +
-    geom_boxplot(aes(track.album.name, tempo)) +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-    labs(x = "", y = "Tempo", title = "Album tempo in a boxplot")
+  facet_grid(~era, scales = "free", space = "free") +
+  geom_boxplot(aes(track.album.name, tempo)) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(x = "", y = "Tempo", title = "Album tempo in a boxplot")
 
 tempoPlotly <- ggplotly(tempoPlot)
-hoverinfo <- with(fleetwoodMac, paste0("Song: ", track.name, "</br></br", 
-                                     "Tempo: ", tempo))
-                  
-tempoPlotly$x$data[[1]]$text <- hoverinfo
+hoverinfo <- with(fleetwoodMac, paste0("Song: ", track.name, "</br></br>", 
+                                       "Tempo: ", tempo))
+
+tempoPlotly$x$data[[1]]$text <- hoverinfo[1:48]
 tempoPlotly$x$data[[1]]$hoverinfo <- c("text", "boxes")
+
+tempoPlotly$x$data[[2]]$text <- hoverinfo[49:98]
+tempoPlotly$x$data[[2]]$hoverinfo <- c("text", "boxes")
+
+tempoPlotly$x$data[[3]]$text <- append(hoverinfo[99:164], hoverinfo[191:208])
+tempoPlotly$x$data[[3]]$hoverinfo <- c("text", "boxes")
+
+tempoPlotly$x$data[[4]]$text <- hoverinfo[165:190]
+tempoPlotly$x$data[[4]]$hoverinfo <- c("text", "boxes")
 
 tempoPlotly
 

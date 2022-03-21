@@ -6,6 +6,7 @@ library(spotifyr)
 library(ggplot2)
 library(knitr)
 library(compmus)
+library(plotly)
 spotifyr::get_spotify_access_token()
 
 fleetwoodMac <- get_playlist_audio_features("", "1NdovVKsJylONwiE6WXwB5")

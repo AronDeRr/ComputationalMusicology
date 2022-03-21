@@ -31,8 +31,9 @@ ggplot(fleetwoodMac_byAlbum, aes(averageEnergy, averageValence, label = track.al
 
 ggplot(fleetwoodMac, aes(track.album.release_date, tempo)) + geom_boxplot() + theme(axis.text.x = element_text(angle=-90, hjust=0))
 
-ggplot(fleetwoodMac, aes(energy, valence, size = track.popularity, colour = mode_name)) + 
+plot <- ggplot(fleetwoodMac, aes(energy, valence, size = track.popularity, colour = mode_name)) + 
   geom_point() + 
   facet_wrap(~track.album.release_date + track.album.name)  +
   labs(x = "Valence", y = "Energy", colour = "Mode", size = "Track Popularity")
                                                                              
+ggplotly(plot)
