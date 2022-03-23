@@ -90,21 +90,17 @@ tempoPlotly
 
 * The song "Murrow Turning over in His Grave" from the album "Say You Will" is tied for first place, having a bpm of 204 as well.
 
-### Is there a key change, when there is a line-up change? (second version)
-
-```{r}
-ggplot(fleetwoodMac, aes(key, fill = era)) +
-  geom_bar(position = "dodge") + 
-  labs(title = "Keys used in different Fleetwood Mac groups")
-```
-
-### Is there a key change, when there is a line-up change? (second version)
+### Is there a key change, when there is a line-up change?
 
 ```{r}
 ggplot(fleetwoodMac, aes(key)) +
   geom_bar(position = "dodge") + 
   facet_grid(~ era) +
+  scale_x_continuous(breaks = c(0, 2, 4, 5, 7, 9, 11), labels = c("C", "D", "E", "F", "G", "A", "B")) +
   labs(title = "Keys used in different Fleetwood Mac groups")
+  
+#  C     C#    D     Eb    E     F     F#    G     Ab    A     Bb    B
+#  0     1     2     3     4     5     6     7     8     9     10    11
 ```
 
 ***
