@@ -278,7 +278,7 @@ To make it easier for comparing these different line-ups I will group them as fo
 <!-- ``` -->
 
 
-<!-- ![image](./figures/ValencVSEnergy.png) -->
+![image](./figures/ValencVSEnergy.png)
 
 ***
 
