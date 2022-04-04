@@ -20,7 +20,11 @@ library(ggplot2)
 library(knitr)
 library(compmus)
 library(plotly)
+library(ggdendro)
+library(heatmaply)
+library(tidymodels)
 spotifyr::get_spotify_access_token()
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 
 fleetwoodMac <- get_playlist_audio_features("", "1NdovVKsJylONwiE6WXwB5")
 
@@ -53,130 +57,6 @@ fleetwoodMac <- fleetwoodMac %>%
 fleetwoodMac$era <- factor(fleetwoodMac$era, levels = c("Peter Green", "Bob Welch", "Buckingham Nicks", "Billy Burnette"))
 fleetwoodMac$track.album.name <- factor(fleetwoodMac$track.album.name, levels = c("Fleetwood Mac 1", "Mr. Wonderful", "Then Play On", "Kiln House", "Future Games", "Bare Trees", "Penguin", "Mystery to Me", "Heroes Are Hard to Find", "Fleetwood Mac 2", "Rumours", "Tusk", "Mirage", "Tango in the Night", "Behind the Mask", "Time", "Say You Will"))
 ```
-
-### Tempo boxplot
-
-```{r}
-tempoPlot <- ggplot(fleetwoodMac) +
-  facet_grid(~era, scales = "free", space = "free") +
-  geom_boxplot(aes(track.album.name, tempo)) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-  labs(x = "", y = "Tempo", title = "Album tempo in a boxplot")
-
-tempoPlotly <- ggplotly(tempoPlot)
-hoverinfo <- with(fleetwoodMac, paste0("Song: ", track.name, "</br></br>", 
-                                       "Tempo: ", tempo))
-
-tempoPlotly$x$data[[1]]$text <- hoverinfo[1:48]
-tempoPlotly$x$data[[1]]$hoverinfo <- c("text", "boxes")
-
-tempoPlotly$x$data[[2]]$text <- hoverinfo[49:98]
-tempoPlotly$x$data[[2]]$hoverinfo <- c("text", "boxes")
-
-tempoPlotly$x$data[[3]]$text <- append(hoverinfo[99:164], hoverinfo[191:208])
-tempoPlotly$x$data[[3]]$hoverinfo <- c("text", "boxes")
-
-tempoPlotly$x$data[[4]]$text <- hoverinfo[165:190]
-tempoPlotly$x$data[[4]]$hoverinfo <- c("text", "boxes")
-
-tempoPlotly
-```
-
-***
-
-* The album that stands out the most in this boxplot is the Mr. Wonderful released in the Peter Green line-up. This album stands out, because the album has the highest range in terms of bpm. With the song "Evenin' Boogie" having the highest bpm of the album with a bpm of 204, and Trying So Hard to forget having the lowest bpm with a bpm of 50. With Peter Green as the leader of the band, Fleetwood Mac was mostly known for its blues rock style, which has a higher tempo than regular blues. But "Evenin' Boogie and the two outliers of the first self-named album, show that the band in it's first line-up also made regular blues songs. 
-
-* After Peter Green left the band, the style of Fleetwood Mac changed to soft rock, which as the implies is a softer form of rock. With the blues gone from the band, you would expect a slightly higher tempo in the other albums. For most albums this is the case, because the median bpm of each album is higher than those of the first three albums. The only outlier here is the album "Heroes Are Hard to Find", which has the lowest median bpm. *Not sure why*
-
-* The song "Murrow Turning over in His Grave" from the album "Say You Will" is tied for first place, having a bpm of 204 as well.
-
-### Is there a key change, when there is a line-up change?
-
-```{r}
-ggplot(fleetwoodMac, aes(key)) +
-  geom_bar(position = "dodge") + 
-  facet_grid(~ era) +
-  scale_x_continuous(breaks = c(0, 2, 4, 5, 7, 9, 11), labels = c("C", "D", "E", "F", "G", "A", "B")) +
-  labs(title = "Keys used in different Fleetwood Mac groups")
-  
-#  C     C#    D     Eb    E     F     F#    G     Ab    A     Bb    B
-#  0     1     2     3     4     5     6     7     8     9     10    11
-```
-
-***
-
-* In this section I will discuss the keys that are used in each line-up.
-
-* Peter Green's Fleetwood Mac has two keys, key 2 and key 9, that are used a lot more than the others. Key 2 is also used quite a bit in the Bob Welch era, but is not the most used key. During the Buckingham Nicks and the Billy Burnette line-up key 2 is still used, but it is one of the lesser used keys. Key 9, however, did get used the most in these line-ups, but in the Bob Welch line-up this key is was only moderately popular.
-
-* The most used key in the Bob Welch line-up is key 5, which was the 3rd most used key in the previous line-up. In the final two line-ups this key was used, but it does not stand out.
-
-* During the Buckingham Nicks era key 0 got used a lot, while in the other line-ups this key was barely used.
-
-### The Chain
-
-```{r}
-
-thechain <-
-  get_tidy_audio_analysis("5e9TFTbltYBg2xThimr0rU") %>% # Change URI.
-  compmus_align(bars, segments) %>%                     # Change `bars`
-  select(bars) %>%                                      #   in all three
-  unnest(bars) %>%                                      #   of these lines.
-  mutate(
-    pitches =
-      map(segments,
-          compmus_summarise, pitches,
-          method = "rms", norm = "euclidean"              # Change summary & norm.
-      )
-  ) %>%
-  mutate(
-    timbre =
-      map(segments,
-          compmus_summarise, timbre,
-          method = "rms", norm = "euclidean"              # Change summary & norm.
-      )
-  )
-
-bind_rows(
-  thechain %>% 
-    compmus_self_similarity(pitches, "aitchison") %>% 
-    mutate(d = d / max(d), type = "Chroma"),
-  thechain %>% 
-    compmus_self_similarity(timbre, "euclidean") %>% 
-    mutate(d = d / max(d), type = "Timbre")
-) %>%
-  mutate() %>% 
-  ggplot(
-    aes(
-      x = xstart + xduration / 2,
-      width = xduration,
-      y = ystart + yduration / 2,
-      height = yduration,
-      fill = d
-    )
-  ) +
-  geom_tile() +
-  coord_fixed() +
-  facet_wrap(~type) +
-  scale_fill_viridis_c(option = "E", guide = "none") +
-  theme_classic() + 
-  labs(x = "", y = "", title = "Self-similarity Matrix of The Chain")
-```
-
-***
-
-<iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/7Dm3dV3WPNdTgxoNY7YFnc?utm_source=generator" width="100%" height="80" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
-
-
-* I have chosen the song "The Chain" for the self-similarity matrix, because there is a two distinct sections in the song. The first section consists of the main verse and the chorus and the second sections is the outro of the song. 
-
-* The Chain is also the only song in the Buckingham Nicks era which is written by all band members.
-
-* In the first section of the song there is a checkerboard pattern visible in the chromagram.
-
-* The change between the first section and the second section starts around the three minute mark, when all instruments go silent, except for the drums. This can be seen in both matrices, because there is a straight horizontal and vertical line.
-
-*  Then the outro starts with an iconic bass section and after 20 seconds a guitar solo accompanies the drums and the bass. When the vocals start in the final part of the outro, you can see a clear shift in timbre in the final section.
 
 ### Introduction to Fleetwood Mac and the purpose of the corpus
 
@@ -255,7 +135,7 @@ A standout song in the line-up featuring Lindsey Buckingham and Stevie Nick is "
 
 <iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/1NdovVKsJylONwiE6WXwB5?utm_source=generator&theme=0" width="100%" height="380" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
 
-### Album valence and energy comparison.
+### How much do the valence and energy differ on each album?
 
 <!-- ```{r} -->
 <!-- fleetwoodMac <- get_playlist_audio_features("", "1NdovVKsJylONwiE6WXwB5") -->
@@ -282,32 +162,252 @@ A standout song in the line-up featuring Lindsey Buckingham and Stevie Nick is "
 
 * Tracks with high valence sound more positive, while tracks with low valence sound more negative. The energy of a track represents a perceptual measure of intensity and activity.
 
-* Every album since Mirage sounds more positive, while albums before that had a more spread out valence. 
+* Every album since "Mirage" sounds more positive, while albums before that had a more spread out valence. 
 
-* The album Rumours is the most popular albums, having a lot of high energy songs and a spread out valence. But just having high energy songs is not enough to make an album popular, this can be seen on the albums Bare Trees and Penguin.
+* The album "Rumours" is the most popular albums, having a lot of high energy songs and a spread out valence. But just having high energy songs is not enough to make an album popular, this can be seen on the albums "Bare Trees" and "Penguin".
+
+### Does the style of a line-up influence the tempo?
+
+```{r}
+tempoPlot <- ggplot(fleetwoodMac) +
+  facet_grid(~era, scales = "free", space = "free") +
+  geom_boxplot(aes(track.album.name, tempo)) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(x = "", y = "Tempo", title = "Album tempo in a boxplot")
+
+tempoPlotly <- ggplotly(tempoPlot)
+hoverinfo <- with(fleetwoodMac, paste0("Song: ", track.name, "</br></br>", 
+                                       "Tempo: ", tempo))
+
+tempoPlotly$x$data[[1]]$text <- hoverinfo[1:48]
+tempoPlotly$x$data[[1]]$hoverinfo <- c("text", "boxes")
+
+tempoPlotly$x$data[[2]]$text <- hoverinfo[49:98]
+tempoPlotly$x$data[[2]]$hoverinfo <- c("text", "boxes")
+
+tempoPlotly$x$data[[3]]$text <- append(hoverinfo[99:164], hoverinfo[191:208])
+tempoPlotly$x$data[[3]]$hoverinfo <- c("text", "boxes")
+
+tempoPlotly$x$data[[4]]$text <- hoverinfo[165:190]
+tempoPlotly$x$data[[4]]$hoverinfo <- c("text", "boxes")
+
+tempoPlotly
+```
+
+***
+
+* The album that stands out the most in this boxplot is the Mr. Wonderful released in the Peter Green line-up. This album stands out, because the album has the highest range in terms of bpm. With the song "Evenin' Boogie" having the highest bpm of the album with a bpm of 204, and Trying So Hard to forget having the lowest bpm with a bpm of 50. With Peter Green as the leader of the band, Fleetwood Mac was mostly known for its blues rock style, which has a higher tempo than regular blues. But "Evenin' Boogie and the two outliers of the first self-named album, show that the band in it's first line-up also made regular blues songs. 
+
+* After Peter Green left the band, the style of Fleetwood Mac changed to soft rock, which as the implies is a softer form of rock. With the blues gone from the band, you would expect a slightly higher tempo in the other albums. For most albums this is the case, because the median bpm of each album is higher than those of the first three albums. The only outlier here is the album "Heroes Are Hard to Find", which has the lowest median bpm.
+
+* The song "Murrow Turning over in His Grave" from the album "Say You Will" is tied for first place, having a bpm of 204 as well.
+
+### How do the albums compare with clustering?
+
+```{r}
+fleetwoodMacAlbum <- fleetwoodMac %>%
+  group_by(track.album.name) %>%
+  summarize(avg_danceability = mean(danceability),
+            avg_energy = mean(energy),
+            avg_loudness = mean(loudness),
+            avg_speechiness = mean(speechiness),
+            avg_acousticness = mean(acousticness),
+            avg_instrumentalness = mean(instrumentalness),
+            avg_liveness = mean(liveness),
+            avg_tempo = mean(tempo),
+            avg_valence = mean(valence))
+
+fleetwoodMac_juice <-
+  recipe(
+    track.album.name ~
+      avg_danceability +
+      avg_energy +
+      avg_loudness +
+      # avg_speechiness +
+      avg_acousticness +
+      # avg_instrumentalness +
+      # avg_liveness +
+      avg_valence +
+      avg_tempo,
+      # C + `C#|Db` + D + `D#|Eb` +
+      # E + `F` + `F#|Gb` + G +
+      # `G#|Ab` + A + `A#|Bb` + B +
+      # c01 + c02 + c03 + c04 + c05 + c06 +
+      # c07 + c08 + c09 + c10 + c11 + c12,
+    data = fleetwoodMacAlbum
+  ) %>%
+  step_center(all_predictors()) %>%
+  step_scale(all_predictors()) %>% 
+  # step_range(all_predictors()) %>% 
+  prep(fleetwoodMacAlbum %>% mutate(track.album.name = str_trunc(track.album.name, 30))) %>%
+  juice() %>%
+  column_to_rownames("track.album.name")
+
+fleetwoodMac_distance <- dist(fleetwoodMac_juice, method = "euclidean")
+
+fleetwoodMac_distance %>% 
+  hclust(method = "average") %>% # Try single, average, and complete.
+  dendro_data() %>%
+  ggdendrogram() + 
+  labs(title = "Clustering of the albums")
+```
+
+***
+
+* This clustering is done to see how the different eras will be grouped together. The clustering is done by taking the average of all the songs on each album. There are a total of 6 Spotify features that are used for this cluster. 3 features that I have used in the previous two plots: energy, valence and tempo. And 3 new features: danceability, loudness and acousticness.
+
+* There are two main clusters and both of these clusters have 2 subclusters. The biggest subcluster consists of the first 5 of the 6 albums released during the Buckingham Nicks era. This shows that there is a clear similarity between these albums. "Say You Will" is the one album of this era, that is not part of this cluster. This might be, because the album was released 16 years after "Tango in the Night" was released and this is the only album in this era that did not have Christine McVie in the line-up.
+
+* Next to this cluster are the two albums of the Billy Burnette line-up: "Behind the Mask" and "Time". These two albums were released after the most popular line-up lost Stevie Nicks and Lindsey Buckingham. These two albums could not live up to the popularity of the previous line-up, but still are quite similar in style.
+
+* In the second main cluster are 3 of the 4 albums of the Peter Green line-up and 3 of the 5 albums of the Bob Welch era. The other 2 albums of this era in the first main cluster. This might be explained, by the transition in style from blues to rock.
+
+### Is there a key change, when there is a line-up change?
+
+```{r}
+ggplot(fleetwoodMac, aes(key)) +
+  geom_bar(position = "dodge") + 
+  facet_grid(~ era) +
+  scale_x_continuous(breaks = c(0, 2, 4, 5, 7, 9, 11), labels = c("C", "D", "E", "F", "G", "A", "B")) +
+  labs(title = "Keys used in different Fleetwood Mac groups")
+  
+#  C     C#    D     Eb    E     F     F#    G     Ab    A     Bb    B
+#  0     1     2     3     4     5     6     7     8     9     10    11
+```
+
+***
+
+* In this section I will discuss the keys that are used in each line-up.
+
+* Peter Green's Fleetwood Mac has two keys, 'D' and 'A', that are used a lot more than the others. 'D' is also used quite a bit in the Bob Welch era, but is not the most used key. During the Buckingham Nicks and the Billy Burnette line-up 'D' is still used, but it is one of the lesser used keys. Key 9, however, did get used the most in these line-ups, but in the Bob Welch line-up this key was only moderately popular.
+
+* The most used key in the Bob Welch line-up is 'F', which was the 3rd most used key in the previous line-up. In the final two line-ups this key was used, but it does not stand out.
+
+* During the Buckingham Nicks era 'C' got used a lot, while in the other line-ups this key was barely used.
+
+### Conclusions
+
+There where two things at the start of this portfolio that I wanted to investigate. 
+
+The first thing I wanted to look at where the changes in genre between the line-ups and how that influenced the style of the band.
+During the Peter Green line-up Fleetwood Mac was known as blues rock band, which influenced the tempo that the band was playing in. For the first three
+albums of this era, the average bpm of the albums was 10 - 15 bpm lower, than the albums in the other eras, which are considered soft rock. The exception being "Heroes Are Hard to Find.
+
+The clustering of the albums also showed that there is a clear difference in energy, valence, tempo, danceability, loudness and acousticness between the Peter Green era and the final two eras.
+
+I also tried to see if there was a clear pattern in the albums released by Buckingham Nicks line-up, because this line-up was the most popular. I tried to do this by first comparing the valence and energy of each album and also comparing the keys used in each line-up. Most of the albums in the Buckingham Nicks had high energy and high valence. However, the albums "Penguin" and "Bare Trees" showed that high energy and high valence does not mean that an album will be popular. Having looked at the different keys, there are differences in the keys used in each line-up, but I cannot conclude that one key made the Buckingham Nicks line-up more popular.
+
+### The Chain: Self-similarity analysis
+
+```{r}
+
+thechain <-
+  get_tidy_audio_analysis("5e9TFTbltYBg2xThimr0rU") %>% # Change URI.
+  compmus_align(bars, segments) %>%                     # Change `bars`
+  select(bars) %>%                                      #   in all three
+  unnest(bars) %>%                                      #   of these lines.
+  mutate(
+    pitches =
+      map(segments,
+          compmus_summarise, pitches,
+          method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  ) %>%
+  mutate(
+    timbre =
+      map(segments,
+          compmus_summarise, timbre,
+          method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  )
+
+bind_rows(
+  thechain %>% 
+    compmus_self_similarity(pitches, "aitchison") %>% 
+    mutate(d = d / max(d), type = "Chroma"),
+  thechain %>% 
+    compmus_self_similarity(timbre, "euclidean") %>% 
+    mutate(d = d / max(d), type = "Timbre")
+) %>%
+  mutate() %>% 
+  ggplot(
+    aes(
+      x = xstart + xduration / 2,
+      width = xduration,
+      y = ystart + yduration / 2,
+      height = yduration,
+      fill = d
+    )
+  ) +
+  geom_tile() +
+  coord_fixed() +
+  facet_wrap(~type) +
+  scale_fill_viridis_c(option = "E", guide = "none") +
+  theme_classic() + 
+  labs(x = "", y = "", title = "Self-similarity Matrix of The Chain")
+```
+
+***
+
+<iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/7Dm3dV3WPNdTgxoNY7YFnc?utm_source=generator" width="100%" height="80" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+
+
+* I have chosen the song "The Chain" for the self-similarity matrix, because there is a two distinct sections in the song. The first section consists of the main verse and the chorus and the second sections is the outro of the song. 
+
+* The Chain is also the only song in the Buckingham Nicks era which is written by all band members.
+
+* In the first section of the song there is a checkerboard pattern visible in the chromagram.
+
+* The change between the first section and the second section starts around the three minute mark, when all instruments go silent, except for the drums. This can be seen in both matrices, because there is a straight horizontal and vertical line.
+
+*  Then the outro starts with an iconic bass section and after 20 seconds a guitar solo accompanies the drums and the bass. When the vocals start in the final part of the outro, you can see a clear shift in timbre in the final section.
 
 <!-- Column {data-width=350} -->
 <!-- ----------------------------------------------------------------------- -->
-### Chromagram of 3 different versions of Landslide
+### Landslide: Chromagram comparison of live and studio versions
 
 ```{r out.width="80%", fig.height=2, fig.align='center', echo = F}
 
 landslide_live_1997 <-
   get_tidy_audio_analysis("06h9kk12VjJ2bqcBc6IScR") %>%
-  select(segments) %>%
-  unnest(segments) %>%
+  compmus_align(bars, segments) %>%                     # Change `bars`
+  select(bars) %>%                                      #   in all three
+  unnest(bars) %>%                                      #   of these lines.
+  mutate(
+    pitches =
+      map(segments,
+          compmus_summarise, pitches,
+          method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  ) %>%
   select(start, duration, pitches)
 
 landslide_studio <-
   get_tidy_audio_analysis("5ihS6UUlyQAfmp48eSkxuQ") %>%
-  select(segments) %>%
-  unnest(segments) %>%
+  compmus_align(bars, segments) %>%                     # Change `bars`
+  select(bars) %>%                                      #   in all three
+  unnest(bars) %>%                                      #   of these lines.
+  mutate(
+    pitches =
+      map(segments,
+          compmus_summarise, pitches,
+          method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  ) %>%
   select(start, duration, pitches)
 
 landslide_live_1975 <-
   get_tidy_audio_analysis("53IkukOzY8ZnDfr4AdVuql") %>%
-  select(segments) %>%
-  unnest(segments) %>%
+  compmus_align(bars, segments) %>%                     # Change `bars`
+  select(bars) %>%                                      #   in all three
+  unnest(bars) %>%                                      #   of these lines.
+  mutate(
+    pitches =
+      map(segments,
+          compmus_summarise, pitches,
+          method = "rms", norm = "euclidean"              # Change summary & norm.
+      )
+  ) %>%
   select(start, duration, pitches)
 
 landslide_studio %>%
@@ -369,10 +469,10 @@ landslide_live_1997 %>%
 <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/06h9kk12VjJ2bqcBc6IScR?utm_source=generator" width="100%" height="80" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
 
 
-* Studio version acoustic guitar with electric guitar solo
+* For the song "Landslide" Lindsey Buckingham uses a guitar style called fingerpicking, which is why grouped the song by bars. However, there is a still a lot of variation between the pitches. The chromagrams use the Chebyshev method for the normalisation.
 
-* Live 1975 version electric guitar solo replaced by piano solo
+* The studio version is played by an acoustic guitar and has an electric guitar solo. F, G and D are the pitches that stand out the most in this chromagram.
 
-* Live 1997 version adjusted guitar solo that is played by acoustic guitar. making the entire song played only by an acoustic guitar
+* In the live version in 1975 the electric guitar solo was replaced by piano solo as Buckingham could not play the acoustic and electric guitar at the same time and they did not have extra touring members. G and D still stand out in the chromagram, but this time A is more common than F. This live version resembles the original more than the second live version, which is expected, because the live version and the studio version are from the same year.
 
-* not sure why the second one is smaller
+* In the live version in 1997 version Lindsey Buckingham played an acoustic guitar solo instead of the electric guitar solo. Thus making the entire song played only by an acoustic guitar. This time F, D and C are the most prominent keys.
