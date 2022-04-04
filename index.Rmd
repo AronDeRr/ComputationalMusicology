@@ -245,11 +245,13 @@ fleetwoodMac_juice <-
 
 fleetwoodMac_distance <- dist(fleetwoodMac_juice, method = "euclidean")
 
-fleetwoodMac_distance %>% 
+clust_plot <- fleetwoodMac_distance %>% 
   hclust(method = "average") %>% # Try single, average, and complete.
   dendro_data() %>%
   ggdendrogram() + 
   labs(title = "Clustering of the albums")
+
+clust_plot
 ```
 
 ***
